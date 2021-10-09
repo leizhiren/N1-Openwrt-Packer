@@ -27,24 +27,7 @@ jobs:
     runs-on: ubuntu-20.04
     if: github.event.repository.owner.id == github.event.sender.id
     steps:
-
-      #检查cpu
-    - name: Check CPU
-      id: checkcpu
-      run: |      
-        cpu_model=`cat /proc/cpuinfo  |grep 'model name' |gawk -F : '{print $2}' | uniq -c  | sed 's/^ \+[0-9]\+ //g'`
-        echo "cpu model: $cpu_model "
-        e5CPU="E5"
-        if [[ $cpu_model =~ $e5CPU ]]
-        then
-            echo "::set-output name=status::cancel"
-        fi
-
-      #若cpu不符合则取消工作流
-    - name: Cancelling
-      if: steps.checkcpu.outputs.status == 'cancel'
-      uses: andymckay/cancel-action@0.2
-      
+          
       #检出自身仓库
     - name: Checkout
       uses: actions/checkout@main
