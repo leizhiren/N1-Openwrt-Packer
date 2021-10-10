@@ -50,13 +50,11 @@ jobs:
       #固件打包刷机镜像包
     - name: Packing Img
       id: packing
-      if: steps.compile.outputs.status == 'true' && env.RELEASE == 'true' && !cancelled()
       run: |
         touch ${UPLOAD}/TestRelease.txt 
 
       #创建发布
     - name: Create release
-      if: steps.packing.outputs.status == 'true' && env.RELEASE == 'true' && !cancelled()
       uses: ncipollo/release-action@v1
       with:
         name: ${{ env.DATE }} 🚀 / N1-Openwrt | 构建
