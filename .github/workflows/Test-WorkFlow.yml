@@ -1,0 +1,98 @@
+#定义工作流名字
+name: Test-WorkFlow
+
+#前置条件
+on:
+  workflow_dispatch:
+    inputs:
+      ssh:
+        description: 'SSH connection to Actions'
+        required: true
+        default: 0
+
+#环境常量
+env:
+  REPO_URL: https://github.com/coolsnowwolf/lede
+  REPO_BRANCH: master
+  CONFIG_FILE: build.config
+  DIY_SH: diy.sh
+  TZ: Asia/Shanghai
+  RELEASE: true
+  FLIPPY_NAME: 66+o
+  RELEASE_NAME: N1-Openwrt-66+o.img
+
+#开始工作流
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    if: github.event.repository.owner.id == github.event.sender.id
+    steps:
+
+      #检出自身仓库
+    - name: Checkout
+      uses: actions/checkout@main
+
+      #初始化编译环境
+    - name: Initialization Environment
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc
+        sudo -E apt-get -qq update
+        sudo -E apt-get -qq install $(curl -fsSL git.io/depends-ubuntu-2004) tree
+        sudo -E apt-get -qq autoremove --purge
+        sudo -E apt-get -qq clean
+        sudo timedatectl set-timezone "$TZ"
+        sudo mkdir -p /workdir
+        sudo chown $USER:$GROUPS /workdir
+        sudo mkdir -p /upload
+        sudo chown $USER:$GROUPS /upload
+        cd /upload
+        echo "UPLOAD=$PWD" >> $GITHUB_ENV
+        echo "tag_name=$(date +%Y%m%d)" >> $GITHUB_ENV
+        echo "DATE=$(date "+%Y-%m-%d %H:%M:%S")"  >> $GITHUB_ENV
+
+      #固件打包刷机镜像包
+    - name: Packing Img
+      id: packing
+      if: steps.compile.outputs.status == 'true' && env.RELEASE == 'true' && !cancelled()
+      run: |
+        touch ${UPLOAD}/TestRelease.txt 
+
+      #创建发布
+    - name: Create release
+      if: steps.packing.outputs.status == 'true' && env.RELEASE == 'true' && !cancelled()
+      uses: ncipollo/release-action@v1
+      with:
+        name: ${{ env.DATE }} 🚀 / N1-Openwrt | 构建
+        allowUpdates: true
+        tag: ${{ env.tag_name }}
+        commit: master
+        token: ${{ secrets.RELEASES_TOKEN }}
+        body: |
+          默认IP：192.168.31.2 默认密码： password
+          全新刷入emmc方法：
+             1. 固件刷入U盘。
+             2. cd root
+             3. ./install-to-emmc.sh
+             4. 拔掉U盘，断电重启。
+             
+          在线升级方法：
+             1. cd /mnt/mmcblk2p4
+             2. wget 升级脚本链接,鼠标右击openwrt-update-amlogic 文件获取链接地址
+             3. wget img.gz后缀名的固件链接,鼠标右击后缀.img.gz文件获取链接地址
+             4. gzip -d 解压缩上一步下载的固件全名
+             5. chmod +x openwrt-update-amlogic
+             6. ./openwrt-update-amlogic后，选择y是保留配置升级，选N相当于重装。
+             7.升级完成后系统会自动重启，稍安勿躁。
+        artifacts:  ${{ env.UPLOAD }}/*
+        
+      #删除旧的发布
+    - name: Remove old Releases
+      uses: dev-drprasad/delete-older-releases@v0.2.0
+      if: env.RELEASE == 'true' && !cancelled()
+      with:
+        keep_latest: 10
+        delete_tags: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.RELEASES_TOKEN }}
