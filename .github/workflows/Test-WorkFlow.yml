@@ -51,7 +51,7 @@ jobs:
     - name: Packing Img
       id: packing
       run: |
-        touch ${UPLOAD}/TestRelease.txt 
+        cp 66+o/opt/kernel/dtb-amlogic-5.4.151-flippy-66+o.tar.gz ${UPLOAD}/
 
       #创建发布
     - name: Create release
