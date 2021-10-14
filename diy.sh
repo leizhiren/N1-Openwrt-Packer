@@ -69,13 +69,13 @@ if [ -e feeds/packages/utils/docker-ce ];then
 	sed -i 's/+docker/+docker-ce/g' package/luci-app-dockerman/Makefile
 fi
 
-#网易云解锁
-pushd package
-git clone https://github.com/UnblockNeteaseMusic/luci-app-unblockneteasemusic.git
+# #网易云解锁
+# pushd package
+# git clone https://github.com/UnblockNeteaseMusic/luci-app-unblockneteasemusic.git
 
-#Zerotier
-git clone --depth=1 https://github.com/rufengsuixing/luci-app-zerotier
-popd
+# #Zerotier
+# git clone --depth=1 https://github.com/rufengsuixing/luci-app-zerotier
+# popd
 
 # Mod zzz-default-settings
 sed -i "/commit luci/i\uci set luci.main.mediaurlbase='/luci-static/argon'" package/lean/default-settings/files/zzz-default-settings
